@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 文件日志统一保存到固定目录；不再使用项目目录下的 .logs。 -->
+    <property name="LOG_HOME" value="/apps/logs/sage-memory" />
+    <property name="LOG_BAK" value="${LOG_HOME}/bak" />
+    <property name="LOG_FILE" value="${LOG_HOME}/console.log" />
+
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS,Asia/Shanghai} [%thread] %-5level %logger{36} - %msg%n" />
+
+    <!-- 保留标准输出，便于 docker logs 和容器平台采集；Docker 自身的日志单独限额。 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <charset>UTF-8</charset>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 文件输出配置（带滚动策略） -->
+    <appender name="ROLLING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 当前日志文件路径 -->
+        <file>${LOG_FILE}</file>
+        <!-- 立即刷新到磁盘 -->
+        <immediateFlush>true</immediateFlush>
+        <!-- 按日期和大小滚动，防止调试日志在一天内撑满磁盘。 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_BAK}/console.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <!-- 备份保留 10 天，总量至多 1GB；当前活动文件不计入备份配额。 -->
+            <maxHistory>10</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <charset>UTF-8</charset>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 日志级别配置 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="ROLLING_FILE" />
+    </root>
+</configuration>

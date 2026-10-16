@@ -1,0 +1,6 @@
+# Only the runtime JAR is needed. Do not send local memories, logs, source credentials or test data to the builder.
+**
+!Dockerfile
+!.dockerignore
+!target/
+!target/sage-memory-0.1.0-SNAPSHOT.jar
