@@ -16,7 +16,7 @@ services:
       SERVER_SHUTDOWN: graceful
       SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE: 30m
     # 可根据服务器资源调整；JVM 堆只占容器内存的 60%，为线程、图片和本地内存留余量。
-    mem_limit: 2g
+    mem_limit: ${SAGE_MEMORY_CONTAINER_MEMORY:-8g}
     stop_grace_period: 31m
     volumes:
       # 同时持久化 workspace 和 add-state；不要只挂 workspace。

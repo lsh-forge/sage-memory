@@ -10,7 +10,7 @@ public class VisionProperties {
     private String apiKey;
     private String baseUrl = "https://api.openai.com/v1";
     private String modelName = "gpt-4o-mini";
-    private int concurrency = 10;
+    private int concurrency = 32;
     private int timeoutSeconds = 180;
     private int maxOutputTokens = 10000;
 

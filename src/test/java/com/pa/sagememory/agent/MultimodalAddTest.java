@@ -93,7 +93,9 @@ class MultimodalAddTest {
         for (int i = 0; i < 12; i++) messages.add(message("marker-%02d".formatted(i), i == 0 ? 2 : 1,
                 i == 11 ? "assistant" : "user"));
         AddRequest request = new AddRequest("images", "zhangsan", "session-1", messages);
-        try (var images = new ImageIngestionService(new VisionProperties(), vision);
+        var visionProperties = new VisionProperties();
+        visionProperties.setConcurrency(10);
+        try (var images = new ImageIngestionService(visionProperties, vision);
              var service = new AddAgentService(properties, textModel, store, images)) {
             assertThat(service.add(request).success()).isTrue();
             assertThat(peak.get()).isEqualTo(10);

@@ -14,6 +14,7 @@ import com.pa.sagememory.agent.workspace.AddWorkspaceStore;
 import com.pa.sagememory.agent.workspace.AddMemoryAttempt;
 import com.pa.sagememory.agent.workspace.MemoryProvenanceNormalizer;
 import com.pa.sagememory.agent.workspace.WorkspaceIdentity;
+import com.pa.sagememory.agent.workspace.KeyedLocks;
 import com.pa.sagememory.agent.multimodal.ImageIngestionService;
 import com.pa.sagememory.agent.multimodal.VisionProperties;
 import com.pa.sagememory.controller.ApiRequestValidator;
@@ -69,8 +70,8 @@ public class AddAgentService implements AutoCloseable {
     private final ImageIngestionService images;
     private final AgentDebugLogProperties debugLog;
     private final AgentLogRedactor logRedactor;
-    // 条带锁保证同用户串行；哈希碰撞的不同用户也会串行，仅适用于单 JVM。
-    private final ReentrantLock[] userLocks = new ReentrantLock[64];
+    // 同用户串行，不同用户不因哈希碰撞互相等待；最后一个持有者/等待者退出后回收锁。
+    private final KeyedLocks userLocks = new KeyedLocks();
     private volatile Model configuredModel;
 
     @Autowired
@@ -103,7 +104,6 @@ public class AddAgentService implements AutoCloseable {
         this.images = images;
         this.debugLog = debugLog;
         this.logRedactor = logRedactor;
-        for (int i = 0; i < userLocks.length; i++) userLocks[i] = new ReentrantLock();
     }
 
     public AddResponse add(AddRequest request) {
@@ -130,7 +130,12 @@ public class AddAgentService implements AutoCloseable {
     }
 
     private AddResponse processRequest(AddRequest request, Model model, AddDeadline deadline) {
-        ReentrantLock lock = userLocks[Math.floorMod(request.userId().hashCode(), userLocks.length)];
+        try (var lease = userLocks.retain(request.userId())) {
+            return processLockedRequest(request, model, deadline, lease.lock());
+        }
+    }
+
+    private AddResponse processLockedRequest(AddRequest request, Model model, AddDeadline deadline, ReentrantLock lock) {
         String trace = AddLogSupport.trace(request);
         long lockStartedAt = System.nanoTime();
         log.info("[Add等待用户锁] {}，锁等待上限={}秒", trace, properties.getQueueTimeoutSeconds());

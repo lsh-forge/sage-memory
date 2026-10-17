@@ -12,7 +12,7 @@ public class SearchAgentProperties {
     private int requestTimeoutSeconds = 180;
     private int httpWaitTimeoutSeconds = 200;
     private int maxOutputTokens = 8000;
-    private int workerThreads = 4;
+    private int workerThreads = 16;
     private int queueCapacity = 32;
     public void validate() {
         if (maxIters < 1 || modelTimeoutSeconds < 1 || requestTimeoutSeconds < 1

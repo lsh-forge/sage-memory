@@ -23,11 +23,11 @@ public class AddAgentProperties {
     // 归并 Agent 单次模型调用时限；所有轮次和重试仍共享 Add 的整单截止时间。
     private int consolidationTimeoutSeconds = 300;
     private int consolidationMaxIters = 20;
-    private int queueTimeoutSeconds = 30;
+    private int queueTimeoutSeconds = 120;
     // 比赛单次请求上限 30 分钟；整单 29 分钟、HTTP 29.5 分钟，为响应传输留出余量。
     private int requestTimeoutSeconds = 1740;
     private int httpWaitTimeoutSeconds = 1770;
-    private int workerThreads = 4;
+    private int workerThreads = 16;
     private int queueCapacity = 64;
     // 固定最多两段同 Session 的 Save 摘要；总字符上限，0 表示不附带摘要。
     private int recentSaveMaxChars = 4_000;

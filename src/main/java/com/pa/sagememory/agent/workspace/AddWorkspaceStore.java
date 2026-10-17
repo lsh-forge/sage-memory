@@ -46,6 +46,7 @@ public class AddWorkspaceStore {
     private static final JsonMapper JSON = JsonMapper.builder().build();
     private final Path root;
     private final Path stateRoot;
+    private final KeyedLocks storageLocks = new KeyedLocks();
 
     public AddWorkspaceStore(AddAgentProperties properties) {
         Path configured = Path.of(properties.getWorkspaceRoot());
@@ -134,7 +135,15 @@ public class AddWorkspaceStore {
     }
 
     /** 原图按图片 ID 存储；同 ID 重试校验内容，不能覆盖另一张图。模型调用不在锁内，仍并行。 */
-    public synchronized String saveImage(Workspace workspace, String imageId, byte[] bytes, String mediaType) throws IOException {
+    public String saveImage(Workspace workspace, String imageId, byte[] bytes, String mediaType) throws IOException {
+        try (var lease = storageLocks.retain(workspace.user().toString())) {
+            lease.lock().lock();
+            try { return saveImageLocked(workspace, imageId, bytes, mediaType); }
+            finally { lease.lock().unlock(); }
+        }
+    }
+
+    private String saveImageLocked(Workspace workspace, String imageId, byte[] bytes, String mediaType) throws IOException {
         Path directory = workspace.user().resolve("assets/images");
         ensureDirectory(directory);
         String relative = ImageIdentity.relativePath(imageId, mediaType);
@@ -193,7 +202,15 @@ public class AddWorkspaceStore {
     }
 
     /** 识图前一次性持久化整单编号；同用户的新请求也必须跳过尚未写入原始会话的预留编号。 */
-    public synchronized List<Map<String, Object>> sourceMessages(Workspace workspace, AddRequest request) throws IOException {
+    public List<Map<String, Object>> sourceMessages(Workspace workspace, AddRequest request) throws IOException {
+        try (var lease = storageLocks.retain(workspace.user().toString())) {
+            lease.lock().lock();
+            try { return sourceMessagesLocked(workspace, request); }
+            finally { lease.lock().unlock(); }
+        }
+    }
+
+    private List<Map<String, Object>> sourceMessagesLocked(Workspace workspace, AddRequest request) throws IOException {
         long maximum = 0;
         Map<Integer, String> existingIds = new LinkedHashMap<>();
         Map<String, String> owners = new LinkedHashMap<>();

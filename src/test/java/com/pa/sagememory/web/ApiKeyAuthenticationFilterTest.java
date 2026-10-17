@@ -58,11 +58,22 @@ class ApiKeyAuthenticationFilterTest {
     }
 
     @ParameterizedTest @ValueSource(strings = {"/add;alias=1", "/add/", "/search;alias=1", "/health/other"})
-    void nonPublicPathsCannotBypassAuthentication(String path) throws Exception {
+    void suppliedInvalidKeysAreRejectedOnOtherPaths(String path) throws Exception {
         var request = new MockHttpServletRequest("POST", path);
+        request.addHeader("X-Api-Key", "wrong-key");
         var response = new MockHttpServletResponse();
         new ApiKeyAuthenticationFilter(properties()).doFilter(request, response, (req, res) -> { throw new AssertionError("Must not pass"); });
         assertThat(response.getStatus()).isEqualTo(401);
+    }
+
+    @ParameterizedTest @ValueSource(strings = {"/add", "/search"})
+    void missingHeaderAllowsAnonymousAccess(String path) throws Exception {
+        var request = new MockHttpServletRequest("POST", path);
+        AtomicInteger calls = new AtomicInteger();
+        var response = new MockHttpServletResponse();
+        new ApiKeyAuthenticationFilter(properties()).doFilter(request, response, (req, res) -> calls.incrementAndGet());
+        assertThat(calls).hasValue(1);
+        assertThat(response.getStatus()).isEqualTo(200);
     }
 
     @Test

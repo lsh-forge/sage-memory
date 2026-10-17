@@ -13,11 +13,11 @@ sage:
       # 归并 Agent 单次模型最多 5 分钟；多轮和最多一次失败重试均受整单预算约束。
       consolidation-timeout-seconds: 300
       consolidation-max-iters: 40
-      queue-timeout-seconds: 30
+      queue-timeout-seconds: 120
       # 整单 15 分钟，HTTP 等待 16 分钟；调用方读超时也需至少 16 分钟。
       request-timeout-seconds: 900
       http-wait-timeout-seconds: 960
-      worker-threads: 4
+      worker-threads: 16
       queue-capacity: 64
       # 仅附带同一 Session 最近两段 Save 的完整摘要，超限整段省略；0 表示关闭。
       recent-save-max-chars: 4000
@@ -29,7 +29,7 @@ sage:
         api-key: ${VISION_API_KEY:${OPENAI_API_KEY:xxxx}}
         base-url: ${VISION_BASE_URL:https://api1.v3.cm/v1}
         model-name: ${VISION_MODEL_NAME:gpt-4o-mini}
-        concurrency: 10
+        concurrency: 32
         timeout-seconds: 60
         max-output-tokens: 10000
       api-key: ${OPENAI_API_KEY:xxxx}
@@ -39,7 +39,7 @@ sage:
     debug-log:
       # 开发调试：输出完整提示词、工具参数/返回和模型输出；认证字段脱敏，图片 Base64 不输出。
       # 会包含用户对话和记忆正文，非调试环境请关闭；不需要开启 SDK DEBUG。
-      enabled: ${AGENT_DEBUG_LOG_ENABLED:true}
+      enabled: ${AGENT_DEBUG_LOG_ENABLED:false}
 
     search:
       # 默认复用 add 的文本模型配置；Search 只检索和选证据，不生成答案。
@@ -49,7 +49,7 @@ sage:
       request-timeout-seconds: 180
       http-wait-timeout-seconds: 200
       max-output-tokens: 8000
-      worker-threads: 4
+      worker-threads: 16
       queue-capacity: 32
 
 # 业务阶段日志默认 INFO；需要代码位置等细节时设置 SAGE_MEMORY_LOG_LEVEL=DEBUG。

@@ -87,26 +87,31 @@ class ApiContractTest {
     }
 
     @ParameterizedTest @ValueSource(strings = {"/add", "/search"})
-    void missingOrInvalidCredentialsAreRejectedBeforeParsingOrServiceCalls(String path) throws Exception {
+    void suppliedInvalidCredentialsAreRejectedBeforeParsingOrServiceCalls(String path) throws Exception {
         for (String supplied : List.of("", "wrong-key", " " + TEST_API_KEY, TEST_API_KEY + " ")) {
             mvc.perform(MockMvcRequestBuilders.post(path).header("X-Api-Key", supplied)
                     .contentType(MediaType.APPLICATION_JSON).content("malformed-json"))
                     .andExpect(status().isUnauthorized())
                     .andExpect(jsonPath("$.error_code").value("UNAUTHORIZED"));
         }
-        mvc.perform(MockMvcRequestBuilders.post(path).contentType(MediaType.APPLICATION_JSON).content("{}"))
-                .andExpect(status().isUnauthorized());
-        mvc.perform(MockMvcRequestBuilders.post(path).header("Authorization", "Bearer " + TEST_API_KEY)
-                .contentType(MediaType.APPLICATION_JSON).content("{}"))
-                .andExpect(status().isUnauthorized());
         mvc.perform(MockMvcRequestBuilders.post(path).header("X-Api-Key", TEST_API_KEY, "wrong-key")
-                .contentType(MediaType.APPLICATION_JSON).content("{}"))
-                .andExpect(status().isUnauthorized());
-        mvc.perform(MockMvcRequestBuilders.post(path).queryParam("api_key", TEST_API_KEY)
                 .contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isUnauthorized());
         assertThat(addService.lastRequest).isNull();
         assertThat(searchService.lastRequest).isNull();
+    }
+
+    @Test
+    void addAndSearchWithoutApiKeyReachTheServices() throws Exception {
+        addService.respond = true;
+        searchService.respond = true;
+        perform(MockMvcRequestBuilders.post("/add").contentType(MediaType.APPLICATION_JSON).content(validAdd()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
+        perform(MockMvcRequestBuilders.post("/search").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"user_id\":\"user-1\",\"query\":\"Find related history\",\"top_k\":100}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data[0].id").value("event-1"));
+        assertThat(addService.lastRequest).isNotNull();
+        assertThat(searchService.lastRequest).isNotNull();
     }
 
     @Test

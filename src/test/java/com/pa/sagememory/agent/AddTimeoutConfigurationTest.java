@@ -16,7 +16,7 @@ class AddTimeoutConfigurationTest {
         assertThat(properties.getModelTimeoutSeconds()).isEqualTo(180);
         assertThat(properties.getTimeoutSeconds()).isEqualTo(600);
         assertThat(properties.getConsolidationTimeoutSeconds()).isEqualTo(300);
-        assertThat(properties.getQueueTimeoutSeconds()).isEqualTo(30);
+        assertThat(properties.getQueueTimeoutSeconds()).isEqualTo(120);
         assertThat(properties.getRequestTimeoutSeconds()).isEqualTo(1740);
         assertThat(properties.getHttpWaitTimeoutSeconds()).isEqualTo(1770)
                 .isGreaterThan(properties.getRequestTimeoutSeconds()).isLessThan(1800);
